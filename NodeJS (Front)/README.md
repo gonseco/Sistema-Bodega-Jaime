@@ -1,10 +1,11 @@
 # Forma de uso
-1. Descargar el directorio `NodeJS (Front)`
+1. Descargar el directorio `NodeJS (Front)`.
 ## Para abrir el archivo y editar
-2. Abrir el directorio en algún editor de código
+2. Abrir el directorio en algún editor de código.
 ## Para ejecutar
-2. Copia la dirección del proyecto (E.g. `C:\...\NodeJS (Front)`)
-3. En una terminal, ejecuta el comando `npm run dev`
+2. Copia la dirección del proyecto (E.g. `C:\...\NodeJS (Front)`).
+3. En la terminal, escribe `cd + [dirección copiada]`.
+4. En una terminal, ejecuta el comando `npm run dev`.
 
 # Sistema de Gestión de Inventario
 
