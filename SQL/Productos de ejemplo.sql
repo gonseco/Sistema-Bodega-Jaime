@@ -95,17 +95,22 @@ CALL sp_producto_crear(2, 2, 1, 'Aceite Primor 500ML',             80, 20, 4.90,
 CALL sp_producto_crear(2, 2, 1, 'Manteca Famosa 500G',             50, 10, 4.20, @resultado);
 CALL sp_producto_crear(3, 3, 1, 'Arroz Costeño Extra 1KG',        200, 50, 3.80, @resultado);
 CALL sp_producto_crear(3, 3, 1, 'Arroz Costeño Extra 5KG',         90, 20, 17.50, @resultado);
-CALL sp_producto_crear(3, 3, 2, 'Lentejas a granel',               40, 10,  3.80, @resultado);
-CALL sp_producto_crear(3, 3, 2, 'Quinua a granel',                 25,  5,  7.50, @resultado);
+CALL sp_producto_crear(3, 3, 2, 'Lentejas a granel',               40, 10, 3.80, @resultado);
+CALL sp_producto_crear(3, 3, 2, 'Quinua a granel',                 25,  5, 7.50, @resultado);
 CALL sp_producto_crear(4, 4, 1, 'Inca Kola Sabor Original 1L',     20,  5, 4.90, @resultado);
-CALL sp_producto_crear(4, 4, 1, 'Coca-Cola 1.5L',                  30,  5,  5.50, @resultado);
-CALL sp_producto_crear(4, 4, 1, 'Coca-Cola 500ML',                 50, 10,  3.20, @resultado);
-CALL sp_producto_crear(4, 4, 1, 'Sprite 1L',                       25,  5,  4.90, @resultado);
+CALL sp_producto_crear(4, 4, 1, 'Coca-Cola 1.5L',                  30,  5, 5.50, @resultado);
+CALL sp_producto_crear(4, 4, 1, 'Coca-Cola 500ML',                 50, 10, 3.20, @resultado);
+CALL sp_producto_crear(4, 4, 1, 'Sprite 1L',                       25,  5, 4.90, @resultado);
 CALL sp_producto_crear(5, 5, 2, 'Cebolla Roja',                    30, 10, 4.59, @resultado);
-CALL sp_producto_crear(5, 5, 2, 'Tomate',                          50, 15,  2.80, @resultado);
-CALL sp_producto_crear(5, 5, 2, 'Papa Blanca',                    100, 30,  1.90, @resultado);
-CALL sp_producto_crear(5, 5, 2, 'Zanahoria',                       40, 10,  1.50, @resultado);
+CALL sp_producto_crear(5, 5, 2, 'Tomate',                          50, 15, 2.80, @resultado);
+CALL sp_producto_crear(5, 5, 2, 'Papa Blanca',                    100, 30, 1.90, @resultado);
+CALL sp_producto_crear(5, 5, 2, 'Zanahoria',                       40, 10, 1.50, @resultado);
 CALL sp_producto_crear(6, 6, 2, 'Sandía',                          10,  2, 1.89, @resultado);
-CALL sp_producto_crear(6, 6, 2, 'Mango',                           30,  8,  3.20, @resultado);
-CALL sp_producto_crear(6, 6, 2, 'Plátano de seda',                 45, 10,  2.10, @resultado);
-CALL sp_producto_crear(6, 6, 3, 'Jugo de naranja natural',         20,  5,  4.00, @resultado);
+CALL sp_producto_crear(6, 6, 2, 'Mango',                           30,  8, 3.20, @resultado);
+CALL sp_producto_crear(6, 6, 2, 'Plátano de seda',                 45, 10, 2.10, @resultado);
+CALL sp_producto_crear(6, 6, 3, 'Jugo de naranja natural',         20,  5, 4.00, @resultado);
+
+-- Registro de Proveedores
+CALL sp_proveedor_crear('Danielita', '20123456789', '912345678', 'Calle Armaldo Armaldez 123', @resultado);
+CALL sp_proveedor_crear('Jackeline Vasquez', '10222444666', '901234567', 'Avenida Separadora Industrial 987', @resultado);
+CALL sp_proveedor_crear('PROVEEDOR JUAN SAC', '20123456789', '999666333', 'Jirón Sepulveda 245', @resultado);

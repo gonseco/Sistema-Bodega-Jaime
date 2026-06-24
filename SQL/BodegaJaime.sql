@@ -2,6 +2,7 @@ DROP DATABASE IF EXISTS bodegaJaime;
 Create Database if not exists bodegaJaime;
 Use BodegaJaime;
 
+
 -- =============================================================
 -- TABLAS
 -- =============================================================
@@ -97,6 +98,98 @@ CREATE TABLE detalle_venta (
     CONSTRAINT fk_detalle_venta FOREIGN KEY (id_venta) REFERENCES venta(id_venta),
     CONSTRAINT fk_detalle_producto FOREIGN KEY (id_producto) REFERENCES producto(id_producto)
 ) ENGINE=InnoDB;
+
+-- Tabla: proveedor
+CREATE TABLE proveedor (
+    id_proveedor INT NOT NULL AUTO_INCREMENT,
+    nombre VARCHAR(150) NOT NULL,
+    ruc VARCHAR(11),
+    telefono VARCHAR(20),
+    direccion VARCHAR(200),
+    estado TINYINT NOT NULL DEFAULT 1,
+    PRIMARY KEY (id_proveedor)
+) ENGINE=InnoDB;
+
+-- Tabla: orden_compra 
+CREATE TABLE orden_compra (
+    id_orden_compra INT NOT NULL AUTO_INCREMENT,
+    id_proveedor INT NOT NULL,
+    id_usuario INT NOT NULL,
+    fecha_orden DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    total DECIMAL(10,2) NOT NULL DEFAULT 0,
+    estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',  -- PENDIENTE, ATENDIDA, ANULADA
+    PRIMARY KEY (id_orden_compra),
+    CONSTRAINT fk_oc_proveedor FOREIGN KEY (id_proveedor) REFERENCES proveedor(id_proveedor),
+    CONSTRAINT fk_oc_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+) ENGINE=InnoDB;
+ 
+-- Tabla: detalle_orden_compra
+CREATE TABLE detalle_orden_compra (
+    id_detalle_orden_compra INT NOT NULL AUTO_INCREMENT,
+    id_orden_compra INT NOT NULL,
+    id_producto INT NOT NULL,
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    cantidad_recibida INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (id_detalle_orden_compra),
+    CONSTRAINT fk_doc_orden FOREIGN KEY (id_orden_compra) REFERENCES orden_compra(id_orden_compra),
+    CONSTRAINT fk_doc_producto FOREIGN KEY (id_producto) REFERENCES producto(id_producto)
+) ENGINE=InnoDB;
+ 
+-- Tabla: guia_remision
+CREATE TABLE guia_remision (
+    id_guia_remision INT NOT NULL AUTO_INCREMENT,
+    id_orden_compra INT NOT NULL,
+    id_usuario INT NOT NULL,
+    numero_guia VARCHAR(50) NOT NULL,
+    fecha_recepcion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado TINYINT NOT NULL DEFAULT 1,  -- 1 = activa, 0 = anulada
+    PRIMARY KEY (id_guia_remision),
+    CONSTRAINT fk_gr_orden FOREIGN KEY (id_orden_compra) REFERENCES orden_compra(id_orden_compra),
+    CONSTRAINT fk_gr_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+) ENGINE=InnoDB;
+
+-- Tabla: detalle_guia_remision
+CREATE TABLE detalle_guia_remision (
+    id_detalle_guia_remision INT NOT NULL AUTO_INCREMENT,
+    id_guia_remision INT NOT NULL,
+    id_producto INT NOT NULL,
+    cantidad INT NOT NULL,
+    PRIMARY KEY (id_detalle_guia_remision),
+    CONSTRAINT fk_dgr_guia FOREIGN KEY (id_guia_remision) REFERENCES guia_remision(id_guia_remision),
+    CONSTRAINT fk_dgr_producto FOREIGN KEY (id_producto) REFERENCES producto(id_producto)
+) ENGINE=InnoDB;
+
+-- Tabla: comprobante
+CREATE TABLE comprobante (
+    id_comprobante  INT NOT NULL AUTO_INCREMENT,
+    id_usuario      INT NOT NULL,
+    tipo            VARCHAR(10) NOT NULL,   -- 'BOLETA' o 'FACTURA'
+    serie           VARCHAR(10) NOT NULL,   -- ej: B001 o F001
+    correlativo     INT NOT NULL,
+    nombre_cliente  VARCHAR(150) NOT NULL,
+    ruc_cliente     VARCHAR(20) NULL,       -- solo para facturas
+    fecha           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    total           DECIMAL(10,2) NOT NULL DEFAULT 0,
+    estado          TINYINT NOT NULL DEFAULT 1,  -- 1=activo, 0=anulado
+    PRIMARY KEY (id_comprobante),
+    CONSTRAINT fk_comp_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+) ENGINE=InnoDB;
+
+-- Tabla: detalle_comprobante
+CREATE TABLE detalle_comprobante (
+    id_detalle_comprobante INT NOT NULL AUTO_INCREMENT,
+    id_comprobante         INT NOT NULL,
+    id_producto            INT NOT NULL,
+    cantidad               INT NOT NULL,
+    precio_unitario        DECIMAL(10,2) NOT NULL,
+    subtotal               DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (id_detalle_comprobante),
+    CONSTRAINT fk_dc_comprobante FOREIGN KEY (id_comprobante) REFERENCES comprobante(id_comprobante),
+    CONSTRAINT fk_dc_producto    FOREIGN KEY (id_producto)    REFERENCES producto(id_producto)
+) ENGINE=InnoDB;
+
 
 -- =============================================================
 --                Vistas F
@@ -403,12 +496,14 @@ BEGIN
     ORDER BY v.fecha_venta DESC;
 END$$
 DELIMITER ; -- funciona
+
 -- =============================================================
 --                Vistas F
 -- =============================================================
 
+
 -- =============================================================
---                Funciones
+--                FUNCIONES
 -- =============================================================
 
 -- Verifica si un producto existe (evita registros repetidos)
@@ -454,7 +549,6 @@ BEGIN
     DECLARE codigo VARCHAR(13);
     DECLARE intentos INT DEFAULT 0;
     REPEAT
-        -- Genera 12 dígitos aleatorios con prefijo 200 (rango de uso libre)
         SET codigo = CONCAT(
             '200',
             LPAD(FLOOR(RAND() * 1000000000), 9, '0')
@@ -569,10 +663,7 @@ BEGIN
 END$$
 DELIMITER ; -- funciona
 
-/*
-Función: fn_marca_tiene_productos_activos
-Descripción: Verifica si una marca posee productos activos asociados.
-*/
+-- Verifica si una marca posee productos activos asociados.
 DELIMITER $$
 CREATE FUNCTION fn_marca_tiene_productos_activos(p_id_marca INT)
 RETURNS BOOLEAN
@@ -588,10 +679,7 @@ BEGIN
 END$$
 DELIMITER ; -- funciona
 
-/*
-Función: fn_categoria_tiene_productos_activos
-Descripción: Verifica si una categoría posee productos activos asociados
-*/
+-- Verifica si una categoría posee productos activos asociados
 DELIMITER $$
 CREATE FUNCTION fn_categoria_tiene_productos_activos(p_id_categoria INT)
 RETURNS BOOLEAN
@@ -606,10 +694,7 @@ BEGIN
 END$$
 DELIMITER ; -- funciona
 
-/*
-Función: fn_unidad_tiene_productos
-Descripción: Verifica si una unidad posee productos
-*/
+-- Verifica si una unidad posee productos
 DELIMITER $$
 CREATE FUNCTION fn_unidad_de_medida_tiene_productos(p_id_unidad INT)
 RETURNS BOOLEAN
@@ -622,9 +707,27 @@ BEGIN
     );
 END$$
 DELIMITER ; -- funciona
--- ========================================================================================================================================
---                PROCEDIEMIENTOS    -----ROL-----ROL-----ROL-----ROL-----ROL-----ROL
--- ========================================================================================================================================
+
+-- Genera el siguiente correlativo por tipo y serie
+DELIMITER $$
+CREATE FUNCTION fn_siguiente_correlativo(p_tipo VARCHAR(10), p_serie VARCHAR(10))
+RETURNS INT
+NOT DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE v_correlativo INT;
+    SELECT IFNULL(MAX(correlativo), 0) + 1
+    INTO v_correlativo
+    FROM comprobante
+    WHERE tipo = p_tipo AND serie = p_serie;
+    RETURN v_correlativo;
+END$$
+DELIMITER ;
+
+
+-- ====================================
+-- PROCEDIEMIENTOS: ROL
+-- ====================================
 DELIMITER $$
 CREATE PROCEDURE sp_rol_crear(
     IN  r_nombre      VARCHAR(100),
@@ -693,9 +796,11 @@ BEGIN
 END$$
 DELIMITER ; -- funciona
 
--- ========================================================================================================================================
---                PROCEDIEMIENTOS    -----USUARIO-----USUARIO-----USUARIO-----USUARIO-----USUARIO
--- ========================================================================================================================================
+
+-- ====================================
+-- PROCEDIEMIENTOS: USUARIO
+-- ====================================
+
 DELIMITER $$
 CREATE PROCEDURE sp_usuario_crear(
     IN  u_id_rol   INT,
@@ -782,9 +887,10 @@ BEGIN
 END$$
 DELIMITER ; -- funciona
 
--- ========================================================================================================================================
---                PROCEDIEMIENTOS    -----VENTA-----VENTA-----VENTA-----VENTA-----VENTA
--- ========================================================================================================================================
+
+-- ====================================
+-- PROCEDIEMIENTOS: VENTA
+-- ====================================
 DELIMITER $$
 CREATE PROCEDURE sp_venta_crear(
     IN  v_id_usuario INT,
@@ -932,9 +1038,10 @@ BEGIN
 END$$
 DELIMITER ; -- funciona
 
--- ========================================================================================================================================
---                PROCEDIEMIENTOS    -----MARCA-----MARCA-----MARCA---- -MARCA-----MARCA-----MARCA
--- ==================================== ====================================================================================================
+
+-- ====================================
+-- PROCEDIEMIENTOS: MARCA
+-- ====================================
 DELIMITER $$
 
 CREATE PROCEDURE sp_marca_crear(
@@ -1000,9 +1107,9 @@ END$$
 DELIMITER ; -- probada solo la parte de activar/inactivar sin considerar productos
 
 
--- ========================================================================================================================================
---                PROCEDIEMIENTOS  --------- CATEGORÍA---------- CATEGORÍA------- CATEGORÍA-----
--- =======================================================================================================================================
+-- ====================================
+-- PROCEDIEMIENTOS: CATEGORÍA
+-- ====================================
 
 DELIMITER $$
 CREATE PROCEDURE sp_categoria_crear(
@@ -1070,9 +1177,10 @@ BEGIN
 END$$
 DELIMITER ;  -- probada solo la parte de activar/inactivar sin considerar productos
 
--- ========================================================================================================================================
---                PROCEDIEMIENTOs  ---------- UNIDAD DE MEDIDA---------- UNIDAD DE MEDIDA------- UNIDAD DE MEDIDA---
--- ===================================== ==================================================================================================
+
+-- =====================================
+-- PROCEDIEMIENTOS: UNIDAD DE MEDIDA
+-- ===================================== 
 
 DELIMITER $$
 CREATE PROCEDURE sp_unidad_de_medida_crear(
@@ -1143,9 +1251,9 @@ END$$
 DELIMITER ; -- probada solo la parte de activar/inactivar sin considerar productos
 
 
--- ========================================================================================================================================
---                PROCEDIEMIENTOS  ---------- PRODUCTO--------- PRODUCTO------- PRODUCTO--- - PRODUCTO---- PRODUCTO---- PRODUCTO---- 
--- ===================================== ==================================================================================================
+-- =====================================
+-- PROCEDIEMIENTOS: PRODUCTO 
+-- =====================================
 
 DELIMITER $$
 CREATE PROCEDURE sp_producto_crear(
@@ -1203,7 +1311,6 @@ CREATE PROCEDURE sp_producto_editar(
     IN  p_stock_actual        INT,
     IN  p_stock_minimo        INT,
     IN  p_precio_venta        DECIMAL(10,2),
-    IN  p_codigo_barras		  VARCHAR(13),
     OUT p_resultado           VARCHAR(200)
 )
 BEGIN
@@ -1212,26 +1319,16 @@ BEGIN
         WHERE LOWER(nombre) = LOWER(TRIM(p_nombre)) AND id_producto != p_id_producto
     ) THEN
         SET p_resultado = 'ERROR: Ya existe una producto con ese nombre.';
-	ELSEIF p_codigo_barras IS NOT NULL AND TRIM(p_codigo_barras) != '' AND EXISTS (
-        SELECT 1 FROM producto
-        WHERE codigo_barras = TRIM(p_codigo_barras) AND id_producto != p_id_producto
-    ) THEN
-        SET p_resultado = 'ERROR: Ya existe un producto con ese código de barras.';
-    ELSE
+	ELSE
         UPDATE producto
         SET 
 			id_marca            = IF(p_id_marca            IS NULL,                          id_marca,     p_id_marca),
             id_categoria        = IF(p_id_categoria        IS NULL, id_categoria,                      p_id_categoria),
             id_unidad_de_medida = IF(p_id_unidad_de_medida IS NULL, id_unidad_de_medida,        p_id_unidad_de_medida),
-            nombre              = IF(p_nombre             IS NULL OR TRIM(p_nombre)  = '', nombre,  TRIM(p_nombre)),
-            precio_venta        = IF(p_precio_venta        IS NULL, precio_venta,                      p_precio_venta),
-            codigo_barras       = IF(p_codigo_barras IS NULL OR TRIM(p_codigo_barras) = '', codigo_barras, TRIM(p_codigo_barras))
+            nombre              = IF(p_nombre              IS NULL OR TRIM(p_nombre)  = '',   nombre,  TRIM(p_nombre)),
+            precio_venta        = IF(p_precio_venta        IS NULL, precio_venta,                      p_precio_venta)
         WHERE id_producto = p_id_producto;
-        SET p_resultado = IF(
-			(p_id_marca IS NULL) AND (p_id_categoria IS NULL) AND (p_id_unidad_de_medida IS NULL) AND
-            (p_nombre IS NULL OR TRIM(p_nombre)  = '') AND
-            (p_precio_venta IS NULL), 'OK: Producto sin cambios.','OK: Producto actualizado correctamente.'
-		);
+        SET p_resultado = 'OK: Producto actualizado correctamente.';
     END IF;
 END$$
 DELIMITER ; -- funciona pero no da el mensaje "OK: Ningún cambio realizado" cuando todos los campos son iguales al original
@@ -1263,3 +1360,530 @@ BEGIN
         SET p_resultado = IF(p_estado = 1, 'OK: Producto activado.', 'OK: Producto inactivado.');
 END$$
 DELIMITER ; -- funciona
+
+
+-- ============================================================
+-- PROCEDIMIENTOS: PROVEEDOR
+-- ============================================================
+
+DELIMITER $$
+CREATE PROCEDURE sp_proveedor_crear(
+    IN  p_nombre     VARCHAR(150),
+    IN  p_ruc        VARCHAR(11),
+    IN  p_telefono   VARCHAR(20),
+    IN  p_direccion  VARCHAR(200),
+    OUT p_resultado  VARCHAR(200)
+)
+BEGIN
+    IF p_nombre IS NULL OR TRIM(p_nombre) = '' THEN
+        SET p_resultado = 'ERROR: El nombre del proveedor es obligatorio.';
+    ELSEIF EXISTS (SELECT 1 FROM proveedor WHERE LOWER(nombre) = LOWER(TRIM(p_nombre))) THEN
+        SET p_resultado = 'ERROR: Ya existe un proveedor con ese nombre.';
+    ELSE
+        INSERT INTO proveedor (nombre, ruc, telefono, direccion)
+        VALUES (TRIM(p_nombre), p_ruc, p_telefono, p_direccion);
+        SET p_resultado = 'OK: Proveedor creado';
+    END IF;
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_proveedor_editar(
+    IN  p_id_proveedor INT,
+    IN  p_nombre       VARCHAR(150),
+    IN  p_ruc          VARCHAR(11),
+    IN  p_telefono     VARCHAR(20),
+    IN  p_direccion    VARCHAR(200),
+    OUT p_resultado    VARCHAR(200)
+)
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM proveedor
+        WHERE LOWER(nombre) = LOWER(TRIM(p_nombre)) AND id_proveedor != p_id_proveedor
+    ) THEN
+        SET p_resultado = 'ERROR: Ya existe un proveedor con ese nombre.';
+    ELSE
+        UPDATE proveedor
+        SET
+            nombre    = IF(p_nombre IS NULL OR TRIM(p_nombre) = '', nombre, TRIM(p_nombre)),
+            ruc       = IF(p_ruc IS NULL OR TRIM(p_ruc) = '', ruc, p_ruc),
+            telefono  = IF(p_telefono IS NULL OR TRIM(p_telefono) = '', telefono, p_telefono),
+            direccion = IF(p_direccion IS NULL OR TRIM(p_direccion) = '', direccion, p_direccion)
+        WHERE id_proveedor = p_id_proveedor;
+        SET p_resultado = 'OK: Proveedor actualizado';
+    END IF;
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_proveedor_cambiar_estado(
+    IN  p_id_proveedor INT,
+    IN  p_estado       TINYINT,
+    OUT p_resultado    VARCHAR(200)
+)
+BEGIN
+    UPDATE proveedor SET estado = p_estado WHERE id_proveedor = p_id_proveedor;
+    SET p_resultado = IF(p_estado = 1, 'OK: Proveedor activado.', 'OK: Proveedor inactivado.');
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_buscar_proveedores_activos(IN p_nombre VARCHAR(150))
+BEGIN
+    SELECT id_proveedor AS "Código", nombre AS "Nombre", ruc AS "RUC",
+           telefono AS "Teléfono", direccion AS "Dirección"
+    FROM proveedor
+    WHERE estado = 1
+      AND (p_nombre IS NULL OR nombre LIKE CONCAT('%', p_nombre, '%'));
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_buscar_proveedores_inactivos(IN p_nombre VARCHAR(150))
+BEGIN
+    SELECT id_proveedor AS "Código", nombre AS "Nombre", ruc AS "RUC",
+           telefono AS "Teléfono", direccion AS "Dirección"
+    FROM proveedor
+    WHERE estado = 0
+      AND (p_nombre IS NULL OR nombre LIKE CONCAT('%', p_nombre, '%'));
+END$$
+DELIMITER ;
+ 
+ 
+-- ============================================================
+-- PROCEDIMIENTOS: ORDEN DE COMPRA
+-- ============================================================
+
+DELIMITER $$
+CREATE PROCEDURE sp_orden_compra_crear(
+    IN  p_id_proveedor INT,
+    IN  p_id_usuario   INT,
+    OUT p_id_generado  INT,
+    OUT p_resultado    VARCHAR(200)
+)
+BEGIN
+    IF p_id_proveedor IS NULL THEN
+        SET p_resultado = 'ERROR: El proveedor es obligatorio.';
+        SET p_id_generado = NULL;
+    ELSEIF NOT EXISTS (SELECT 1 FROM proveedor WHERE id_proveedor = p_id_proveedor AND estado = 1) THEN
+        SET p_resultado = 'ERROR: El proveedor no existe o está inactivo.';
+        SET p_id_generado = NULL;
+    ELSE
+        INSERT INTO orden_compra (id_proveedor, id_usuario, total, estado)
+        VALUES (p_id_proveedor, p_id_usuario, 0, 'PENDIENTE');
+        SET p_id_generado = LAST_INSERT_ID();
+        SET p_resultado = 'OK: Orden de compra creada';
+    END IF;
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_detalle_orden_compra_crear(
+    IN  p_id_orden_compra  INT,
+    IN  p_id_producto      INT,
+    IN  p_cantidad         INT,
+    IN  p_precio_unitario  DECIMAL(10,2),
+    OUT p_resultado        VARCHAR(200)
+)
+BEGIN
+    DECLARE v_subtotal DECIMAL(10,2);
+ 
+    IF p_cantidad IS NULL OR p_cantidad <= 0 THEN
+        SET p_resultado = 'ERROR: La cantidad debe ser mayor a 0.';
+    ELSEIF p_precio_unitario IS NULL OR p_precio_unitario <= 0 THEN
+        SET p_resultado = 'ERROR: El precio unitario debe ser mayor a 0.';
+    ELSEIF NOT EXISTS (SELECT 1 FROM producto WHERE id_producto = p_id_producto AND estado = 1) THEN
+        SET p_resultado = 'ERROR: El producto no existe o está inactivo.';
+    ELSE
+        SET v_subtotal = p_cantidad * p_precio_unitario;
+ 
+        INSERT INTO detalle_orden_compra (id_orden_compra, id_producto, cantidad, precio_unitario, subtotal)
+        VALUES (p_id_orden_compra, p_id_producto, p_cantidad, p_precio_unitario, v_subtotal);
+ 
+        UPDATE orden_compra
+        SET total = total + v_subtotal
+        WHERE id_orden_compra = p_id_orden_compra;
+ 
+        SET p_resultado = 'OK: Detalle agregado';
+    END IF;
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_orden_compra_anular(
+    IN  p_id_orden_compra INT,
+    OUT p_resultado       VARCHAR(200)
+)
+BEGIN
+    DECLARE v_estado VARCHAR(20);
+    SELECT estado INTO v_estado FROM orden_compra WHERE id_orden_compra = p_id_orden_compra;
+ 
+    IF v_estado IS NULL THEN
+        SET p_resultado = 'ERROR: La orden de compra no existe.';
+    ELSEIF v_estado = 'ATENDIDA' THEN
+        SET p_resultado = 'ERROR: No se puede anular una orden ya atendida.';
+    ELSEIF v_estado = 'ANULADA' THEN
+        SET p_resultado = 'ERROR: La orden ya está anulada.';
+    ELSE
+        UPDATE orden_compra SET estado = 'ANULADA' WHERE id_orden_compra = p_id_orden_compra;
+        SET p_resultado = 'OK: Orden de compra anulada.';
+    END IF;
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_buscar_ordenes_compra(IN p_estado VARCHAR(20))
+BEGIN
+    SELECT
+        oc.id_orden_compra AS "Código",
+        p.nombre           AS "Proveedor",
+        u.nombre           AS "Usuario",
+        oc.fecha_orden     AS "Fecha",
+        oc.total           AS "Total",
+        oc.estado          AS "Estado"
+    FROM orden_compra oc
+    INNER JOIN proveedor p ON oc.id_proveedor = p.id_proveedor
+    INNER JOIN usuario   u ON oc.id_usuario   = u.id_usuario
+    WHERE (p_estado IS NULL OR oc.estado = p_estado)
+    ORDER BY oc.fecha_orden DESC;
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_detalle_orden_compra_listar(IN p_id_orden_compra INT)
+BEGIN
+    SELECT
+        doc.id_detalle_orden_compra AS "Código",
+        pr.id_producto              AS "IdProducto",
+        pr.nombre                   AS "Producto",
+        doc.cantidad                AS "Cantidad",
+        doc.precio_unitario         AS "PrecioUnitario",
+        doc.subtotal                AS "Subtotal",
+        doc.cantidad_recibida       AS "CantidadRecibida"
+    FROM detalle_orden_compra doc
+    INNER JOIN producto pr ON doc.id_producto = pr.id_producto
+    WHERE doc.id_orden_compra = p_id_orden_compra;
+END$$
+DELIMITER ;
+ 
+
+-- ============================================================
+-- PROCEDIMIENTOS: GUÍA DE REMISIÓN (aumenta el stock)
+-- ============================================================
+
+DELIMITER $$
+CREATE PROCEDURE sp_guia_remision_crear(
+    IN  p_id_orden_compra INT,
+    IN  p_id_usuario      INT,
+    IN  p_numero_guia     VARCHAR(50),
+    OUT p_id_generado     INT,
+    OUT p_resultado       VARCHAR(200)
+)
+BEGIN
+    DECLARE v_estado_orden VARCHAR(20);
+ 
+    IF p_numero_guia IS NULL OR TRIM(p_numero_guia) = '' THEN
+        SET p_resultado = 'ERROR: El número de guía es obligatorio.';
+        SET p_id_generado = NULL;
+    ELSE
+        SELECT estado INTO v_estado_orden FROM orden_compra WHERE id_orden_compra = p_id_orden_compra;
+ 
+        IF v_estado_orden IS NULL THEN
+            SET p_resultado = 'ERROR: La orden de compra no existe.';
+            SET p_id_generado = NULL;
+        ELSEIF v_estado_orden = 'ANULADA' THEN
+            SET p_resultado = 'ERROR: No se puede registrar una guía para una orden anulada.';
+            SET p_id_generado = NULL;
+        ELSE
+            INSERT INTO guia_remision (id_orden_compra, id_usuario, numero_guia)
+            VALUES (p_id_orden_compra, p_id_usuario, TRIM(p_numero_guia));
+            SET p_id_generado = LAST_INSERT_ID();
+            SET p_resultado = 'OK: Guía de remisión creada';
+        END IF;
+    END IF;
+END$$
+DELIMITER ;
+ 
+-- Agrega un detalle a la guía: valida contra lo pendiente de la orden y AUMENTA EL STOCK
+DELIMITER $$
+CREATE PROCEDURE sp_detalle_guia_remision_crear(
+    IN  p_id_guia_remision INT,
+    IN  p_id_producto      INT,
+    IN  p_cantidad         INT,
+    OUT p_resultado        VARCHAR(200)
+)
+BEGIN
+    DECLARE v_id_orden INT;
+    DECLARE v_cantidad_pedida INT;
+ 
+    IF p_cantidad IS NULL OR p_cantidad <= 0 THEN
+        SET p_resultado = 'ERROR: La cantidad debe ser mayor a 0.';
+    ELSE
+        -- Obtener la orden asociada a la guía
+        SELECT id_orden_compra INTO v_id_orden
+        FROM guia_remision WHERE id_guia_remision = p_id_guia_remision;
+ 
+        -- Obtener la cantidad pedida en la orden para este producto
+        SELECT cantidad INTO v_cantidad_pedida
+        FROM detalle_orden_compra
+        WHERE id_orden_compra = v_id_orden AND id_producto = p_id_producto;
+ 
+        IF v_cantidad_pedida IS NULL THEN
+            SET p_resultado = 'ERROR: Este producto no está en la orden de compra asociada.';
+        ELSE
+            -- Registra el detalle de la guía con la cantidad real recibida
+            INSERT INTO detalle_guia_remision (id_guia_remision, id_producto, cantidad)
+            VALUES (p_id_guia_remision, p_id_producto, p_cantidad);
+ 
+            -- Aumenta el stock con la cantidad REAL de la guía (independiente de lo pedido)
+            UPDATE producto
+            SET stock_actual = stock_actual + p_cantidad
+            WHERE id_producto = p_id_producto;
+ 
+            -- Marca la cantidad recibida igual a la pedida (cierra el pendiente)
+            UPDATE detalle_orden_compra
+            SET cantidad_recibida = cantidad
+            WHERE id_orden_compra = v_id_orden AND id_producto = p_id_producto;
+ 
+            -- Marca la orden como ATENDIDA si todos los productos ya no tienen pendientes
+            IF NOT EXISTS (
+                SELECT 1 FROM detalle_orden_compra
+                WHERE id_orden_compra = v_id_orden AND cantidad_recibida < cantidad
+            ) THEN
+                UPDATE orden_compra SET estado = 'ATENDIDA' WHERE id_orden_compra = v_id_orden;
+            END IF;
+ 
+            SET p_resultado = 'OK: Producto recibido y stock actualizado';
+        END IF;
+    END IF;
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_guia_remision_anular(
+    IN  p_id_guia_remision INT,
+    OUT p_resultado        VARCHAR(200)
+)
+BEGIN
+    DECLARE v_estado TINYINT;
+    DECLARE v_id_orden INT;
+ 
+    SELECT estado, id_orden_compra INTO v_estado, v_id_orden
+    FROM guia_remision WHERE id_guia_remision = p_id_guia_remision;
+ 
+    IF v_estado IS NULL THEN
+        SET p_resultado = 'ERROR: La guía de remisión no existe.';
+    ELSEIF v_estado = 0 THEN
+        SET p_resultado = 'ERROR: La guía ya está anulada.';
+    ELSE
+        -- Revierte el stock de cada producto de la guía
+        UPDATE producto pr
+        INNER JOIN detalle_guia_remision dgr ON dgr.id_producto = pr.id_producto
+        SET pr.stock_actual = pr.stock_actual - dgr.cantidad
+        WHERE dgr.id_guia_remision = p_id_guia_remision;
+ 
+        -- Revierte la cantidad recibida en la orden de compra
+        UPDATE detalle_orden_compra doc
+        INNER JOIN detalle_guia_remision dgr ON dgr.id_producto = doc.id_producto
+            AND doc.id_orden_compra = v_id_orden
+        SET doc.cantidad_recibida = doc.cantidad_recibida - dgr.cantidad
+        WHERE dgr.id_guia_remision = p_id_guia_remision;
+ 
+        UPDATE guia_remision SET estado = 0 WHERE id_guia_remision = p_id_guia_remision;
+ 
+        -- Si la orden estaba ATENDIDA, vuelve a PENDIENTE
+        UPDATE orden_compra SET estado = 'PENDIENTE'
+        WHERE id_orden_compra = v_id_orden AND estado = 'ATENDIDA';
+ 
+        SET p_resultado = 'OK: Guía de remisión anulada y stock revertido.';
+    END IF;
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_buscar_guias_remision(IN p_id_orden_compra INT)
+BEGIN
+    SELECT
+        gr.id_guia_remision  AS "Código",
+        gr.numero_guia       AS "NumeroGuia",
+        oc.id_orden_compra   AS "IdOrdenCompra",
+        p.nombre             AS "Proveedor",
+        u.nombre             AS "Usuario",
+        gr.fecha_recepcion   AS "Fecha",
+        gr.estado            AS "Estado"
+    FROM guia_remision gr
+    INNER JOIN orden_compra oc ON gr.id_orden_compra = oc.id_orden_compra
+    INNER JOIN proveedor p     ON oc.id_proveedor = p.id_proveedor
+    INNER JOIN usuario u       ON gr.id_usuario = u.id_usuario
+    WHERE (p_id_orden_compra IS NULL OR gr.id_orden_compra = p_id_orden_compra)
+    ORDER BY gr.fecha_recepcion DESC;
+END$$
+DELIMITER ;
+ 
+DELIMITER $$
+CREATE PROCEDURE sp_detalle_guia_remision_listar(IN p_id_guia_remision INT)
+BEGIN
+    SELECT
+        dgr.id_detalle_guia_remision AS "Código",
+        pr.nombre                    AS "Producto",
+        dgr.cantidad                 AS "Cantidad"
+    FROM detalle_guia_remision dgr
+    INNER JOIN producto pr ON dgr.id_producto = pr.id_producto
+    WHERE dgr.id_guia_remision = p_id_guia_remision;
+END$$
+DELIMITER ;
+
+
+-- ============================================================
+-- PROCEDIMIENTOS: COMPROBANTE
+-- ============================================================
+-- Crea comprobante (boleta o factura)
+DELIMITER $$
+CREATE PROCEDURE sp_comprobante_crear(
+    IN  p_id_usuario     INT,
+    IN  p_tipo           VARCHAR(10),
+    IN  p_serie          VARCHAR(10),
+    IN  p_nombre_cliente VARCHAR(150),
+    IN  p_ruc_cliente    VARCHAR(20),
+    OUT p_id_generado    INT,
+    OUT p_resultado      VARCHAR(200)
+)
+BEGIN
+    DECLARE v_correlativo INT;
+ 
+    IF p_nombre_cliente IS NULL OR TRIM(p_nombre_cliente) = '' THEN
+        SET p_resultado = 'ERROR: El nombre del cliente es obligatorio.';
+        SET p_id_generado = NULL;
+    ELSEIF p_tipo = 'FACTURA' AND (p_ruc_cliente IS NULL OR TRIM(p_ruc_cliente) = '') THEN
+        SET p_resultado = 'ERROR: El RUC es obligatorio para facturas.';
+        SET p_id_generado = NULL;
+    ELSEIF p_tipo NOT IN ('BOLETA', 'FACTURA') THEN
+        SET p_resultado = 'ERROR: Tipo de comprobante inválido.';
+        SET p_id_generado = NULL;
+    ELSE
+        SET v_correlativo = fn_siguiente_correlativo(p_tipo, p_serie);
+ 
+        INSERT INTO comprobante (id_usuario, tipo, serie, correlativo, nombre_cliente, ruc_cliente, total, estado)
+        VALUES (p_id_usuario, p_tipo, p_serie, v_correlativo, TRIM(p_nombre_cliente), NULLIF(TRIM(p_ruc_cliente), ''), 0, 1);
+ 
+        SET p_id_generado = LAST_INSERT_ID();
+        SET p_resultado = 'OK: Comprobante creado';
+    END IF;
+END$$
+DELIMITER ;
+ 
+-- Agrega detalle al comprobante (descuenta stock)
+DELIMITER $$
+CREATE PROCEDURE sp_detalle_comprobante_crear(
+    IN  p_id_comprobante INT,
+    IN  p_id_producto    INT,
+    IN  p_cantidad       INT,
+    IN  p_precio_unitario DECIMAL(10,2),
+    OUT p_resultado      VARCHAR(200)
+)
+BEGIN
+    DECLARE v_stock INT;
+    DECLARE v_subtotal DECIMAL(10,2);
+ 
+    IF p_cantidad IS NULL OR p_cantidad <= 0 THEN
+        SET p_resultado = 'ERROR: La cantidad debe ser mayor a 0.';
+    ELSEIF p_precio_unitario IS NULL OR p_precio_unitario <= 0 THEN
+        SET p_resultado = 'ERROR: El precio unitario debe ser mayor a 0.';
+    ELSE
+        SELECT stock_actual INTO v_stock
+        FROM producto WHERE id_producto = p_id_producto AND estado = 1;
+ 
+        IF v_stock IS NULL THEN
+            SET p_resultado = 'ERROR: El producto no existe o está inactivo.';
+        ELSEIF v_stock < p_cantidad THEN
+            SET p_resultado = CONCAT('ERROR: Stock insuficiente. Disponible: ', v_stock, '.');
+        ELSE
+            SET v_subtotal = p_cantidad * p_precio_unitario;
+ 
+            INSERT INTO detalle_comprobante (id_comprobante, id_producto, cantidad, precio_unitario, subtotal)
+            VALUES (p_id_comprobante, p_id_producto, p_cantidad, p_precio_unitario, v_subtotal);
+ 
+            -- Descuenta el stock
+            UPDATE producto SET stock_actual = stock_actual - p_cantidad
+            WHERE id_producto = p_id_producto;
+ 
+            -- Actualiza el total del comprobante
+            UPDATE comprobante SET total = total + v_subtotal
+            WHERE id_comprobante = p_id_comprobante;
+ 
+            SET p_resultado = 'OK: Producto agregado';
+        END IF;
+    END IF;
+END$$
+DELIMITER ;
+
+-- Anular comprobante (devuelve stock)
+DELIMITER $$
+CREATE PROCEDURE sp_comprobante_anular(
+    IN  p_id_comprobante INT,
+    OUT p_resultado      VARCHAR(200)
+)
+BEGIN
+    DECLARE v_estado TINYINT;
+ 
+    SELECT estado INTO v_estado FROM comprobante WHERE id_comprobante = p_id_comprobante;
+ 
+    IF v_estado IS NULL THEN
+        SET p_resultado = 'ERROR: El comprobante no existe.';
+    ELSEIF v_estado = 0 THEN
+        SET p_resultado = 'ERROR: El comprobante ya está anulado.';
+    ELSE
+        -- Devuelve el stock de cada producto
+        UPDATE producto pr
+        INNER JOIN detalle_comprobante dc ON dc.id_producto = pr.id_producto
+        SET pr.stock_actual = pr.stock_actual + dc.cantidad
+        WHERE dc.id_comprobante = p_id_comprobante;
+ 
+        UPDATE comprobante SET estado = 0 WHERE id_comprobante = p_id_comprobante;
+ 
+        SET p_resultado = 'OK: Comprobante anulado y stock devuelto.';
+    END IF;
+END$$
+DELIMITER ;
+ 
+-- Busca comprobantes
+DELIMITER $$
+CREATE PROCEDURE sp_buscar_comprobantes(
+    IN p_tipo   VARCHAR(10),
+    IN p_estado INT
+)
+BEGIN
+    SELECT
+        c.id_comprobante  AS "Código",
+        c.tipo            AS "Tipo",
+        c.serie           AS "Serie",
+        c.correlativo     AS "Correlativo",
+        c.nombre_cliente  AS "Cliente",
+        c.ruc_cliente     AS "RUC",
+        u.nombre          AS "Usuario",
+        c.fecha           AS "Fecha",
+        c.total           AS "Total",
+        c.estado          AS "Estado"
+    FROM comprobante c
+    INNER JOIN usuario u ON c.id_usuario = u.id_usuario
+    WHERE (p_tipo   IS NULL OR c.tipo   = p_tipo)
+      AND (p_estado IS NULL OR c.estado = p_estado)
+    ORDER BY c.fecha DESC;
+END$$
+DELIMITER ;
+
+-- Listar detalle de comprobante
+DELIMITER $$
+CREATE PROCEDURE sp_detalle_comprobante_listar(IN p_id_comprobante INT)
+BEGIN
+    SELECT
+        dc.id_detalle_comprobante AS "Código",
+        pr.nombre                 AS "Producto",
+        dc.cantidad               AS "Cantidad",
+        dc.precio_unitario        AS "PrecioUnitario",
+        dc.subtotal               AS "Subtotal"
+    FROM detalle_comprobante dc
+    INNER JOIN producto pr ON dc.id_producto = pr.id_producto
+    WHERE dc.id_comprobante = p_id_comprobante;
+END$$
+DELIMITER ;
