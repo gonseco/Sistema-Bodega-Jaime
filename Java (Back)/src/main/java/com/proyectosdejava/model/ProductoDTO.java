@@ -13,12 +13,13 @@ public class ProductoDTO {
     private Integer stockActual;
     private Integer stockMinimo;
     private BigDecimal precio;
+    private String codigoBarras;
 
     // Constructor con todos los campos
     public ProductoDTO(Integer codigo, String nombre, String marca,
                        String categoria, String unidadMedida,
                        Integer stockActual, Integer stockMinimo,
-                       BigDecimal precio) {
+                       BigDecimal precio, String codigoBarras) {
         this.codigo = codigo;
         this.nombre = nombre;
         this.marca = marca;
@@ -27,6 +28,7 @@ public class ProductoDTO {
         this.stockActual = stockActual;
         this.stockMinimo = stockMinimo;
         this.precio = precio;
+        this.codigoBarras = codigoBarras;
     }
 
     public Integer getCodigo() {
@@ -60,4 +62,6 @@ public class ProductoDTO {
     public BigDecimal getPrecio() {
         return precio;
     }
+
+    public String getCodigoBarras() { return codigoBarras; }
 }

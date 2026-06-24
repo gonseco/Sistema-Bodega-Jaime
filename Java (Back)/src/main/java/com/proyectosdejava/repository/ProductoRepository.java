@@ -39,7 +39,8 @@ public class ProductoRepository {
                 (String)     f[4],   // Unidad de medida
                 (Integer)    f[5],   // Stock Actual
                 (Integer)    f[6],   // Stock Mínimo
-                (BigDecimal) f[7]    // Precio
+                (BigDecimal) f[7],   // Precio
+                (String)     f[8]    // Código de barras
         )).collect(Collectors.toList());
     }
 
@@ -75,7 +76,7 @@ public class ProductoRepository {
         return (String) q.getOutputParameterValue(8); // "OK: ..." o "ERROR: ..."
     }
 
-    //Editar — tiene parámetro OUT
+    //Editar — tiene parámetro OUT. El código de barras NO se puede editar.
     public String editarProducto(Integer idProducto, Integer idMarca, Integer idCategoria,
                                  Integer idUnidadDeMedida, String nombre, BigDecimal precioVenta) {
 

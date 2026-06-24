@@ -1,7 +1,5 @@
 package com.proyectosdejava.controller;
 
-// src/main/java/com/tuapp/controller/ProductoController.java
-
 import com.proyectosdejava.model.Producto;
 import com.proyectosdejava.model.ProductoDTO;
 import com.proyectosdejava.service.ProductoService;

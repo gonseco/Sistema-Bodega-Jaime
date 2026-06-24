@@ -5,18 +5,16 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "marca")
 public class Marca {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_marca")
+    private Integer idMarca;
 
+    private String nombre;
+    private String empresa;
+    private Integer estado;
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        @Column(name = "id_marca")
-        private Integer idMarca;
-
-        private String nombre;
-        private String empresa;
-        private Integer estado;
-
-        //Getters y Setters
+    //Getters y Setters
     public Integer getIdMarca() {
         return idMarca;
     }

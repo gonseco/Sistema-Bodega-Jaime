@@ -1,7 +1,5 @@
 package com.proyectosdejava.service;
 
-// src/main/java/com/tuapp/service/ProductoService.java
-
 import com.proyectosdejava.model.ProductoDTO;
 import com.proyectosdejava.repository.ProductoRepository;
 import jakarta.transaction.Transactional;
