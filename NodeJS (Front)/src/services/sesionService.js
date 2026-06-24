@@ -8,6 +8,19 @@ const rolPorId = {
   2: 'encargado',
 }
 
+export const obtenerUsuarioSesion = () => {
+  if (typeof window === 'undefined') return null
+ 
+  const usuarioSesion = localStorage.getItem('usuarioSesion')
+  if (!usuarioSesion) return null
+ 
+  try {
+    return JSON.parse(usuarioSesion)
+  } catch {
+    return null
+  }
+}
+
 export const obtenerRolSesion = () => {
   if (typeof window === 'undefined') return null
 

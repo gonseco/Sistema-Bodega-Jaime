@@ -9,6 +9,16 @@ const selectorService = {
 
     unidades: () =>
         api.get('/unidad-de-medida/listar-activas'),
+
+    proveedores: () =>
+        api.get('/proveedor/listar-activos').then(res => ({
+            data: res.data.map(p => [p.codigo, p.nombre])
+        })),
+
+    productos: () =>
+        api.get('/producto/listar-activos').then(res => ({
+            data: res.data.map(p => [p.codigo, p.nombre, p.precio])
+        })),
 }
 
 export default selectorService

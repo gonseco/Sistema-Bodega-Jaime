@@ -11,60 +11,50 @@ function Login({ onLoginExitoso }) {
     e.preventDefault()
     setError('')
     setCargando(true)
-
     try {
-      const usuario = await loginService.login(correo.trim(), password)
+      const usuario = await loginService.login(correo, password)
       localStorage.setItem('usuarioSesion', JSON.stringify(usuario))
       onLoginExitoso()
     } catch (err) {
-      const status = err.response?.status
-      const mensajeBackend = err.response?.data?.mensaje
-
-      if (status === 401 || status === 403) {
-        setError(mensajeBackend || 'Correo o password incorrectos')
-      } else if (!err.response) {
-        setError('No se pudo conectar con el servidor')
-      } else {
-        setError(mensajeBackend || 'No se pudo iniciar sesion')
-      }
+      setError(err.message || 'Correo o contraseña incorrectos')
     } finally {
       setCargando(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#eaf2fb] flex items-center justify-center px-4">
-      <div className="bg-white/85 rounded-2xl shadow-lg p-10 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-slate-900 mb-1">Bodega Jaime</h1>
-        <p className="text-slate-500 text-sm mb-8">Inicia sesion para continuar</p>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md">
+        <h1 className="text-3xl font-bold text-gray-800 mb-1">Bodega Jaime</h1>
+        <p className="text-gray-400 text-sm mb-8">Inicia sesión para continuar</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-slate-600">Correo</label>
+            <label className="text-sm font-medium text-gray-600">Correo</label>
             <input
               type="email"
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
               required
               placeholder="tu@correo.com"
-              className="border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+              className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-slate-600">Password</label>
+            <label className="text-sm font-medium text-gray-600">Contraseña</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="********"
-              className="border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+              placeholder="••••••••"
+              className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
             />
           </div>
 
           {error && (
-            <p className="text-red-700 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
               {error}
             </p>
           )}
@@ -72,7 +62,7 @@ function Login({ onLoginExitoso }) {
           <button
             type="submit"
             disabled={cargando}
-            className="bg-yellow-400 border-4 border-yellow-500 text-slate-950 py-2.5 rounded-xl text-sm font-bold hover:bg-yellow-300 transition-colors disabled:opacity-60"
+            className="bg-gray-800 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors disabled:opacity-60"
           >
             {cargando ? 'Ingresando...' : 'Ingresar'}
           </button>
